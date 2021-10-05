@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import ListView, DetailView
-from django.view import View
+from django.views import View
 
 from .models import Post
 from .forms import CommentForm
@@ -26,13 +26,23 @@ class AllPostsView(ListView):
   context_object_name = "all_posts"
 
 class SinglePostView(View):
+  def is_stored_post(self, request, post_id):
+    stored_posts = request.session.get("stored_posts")
+    if stored_posts:
+      is_saved = post_id in stored_posts
+    else:
+      is_saved = False
+    return is_saved
+
   def get(self, request, slug):
     post = Post.objects.get(slug=slug)
+
     context = {
       "post": post,
       "post_tags": post.tags.all(),
       "comment_form": CommentForm(),
       "comments": post.comments.all().order_by("-id"),
+      "is_saved": self.is_stored_post(request, post.id),
     }
     return render(request, "blog/post-detail.html", context)
 
@@ -52,6 +62,7 @@ class SinglePostView(View):
       "post_tags": post.tags.all(),
       "comment_form": CommentForm(),
       "comments": post.comments.all().order_by("-id"),
+      "is_saved": self.is_stored_post(request, post.id)
     }
     return render(request, "blog/post-detail.html", context)
 
@@ -81,6 +92,9 @@ class ReadLaterView(View):
     
     if post_id not in stored_posts:
       stored_posts.append(post_id)
-      request.session["stored_posts"] = stored_posts
+    else:
+      stored_posts.remove(post_id)
+
+    request.session["stored_posts"] = stored_posts
 
     return HttpResponseRedirect("/")
