@@ -1,7 +1,7 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView
 from django.views import View
 
 from .models import Post
